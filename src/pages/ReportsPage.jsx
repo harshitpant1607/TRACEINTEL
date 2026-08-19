@@ -10,7 +10,7 @@ export default function ReportsPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const handleDownloadReport = (rep) => {
-    addToast(`Evidentiary report ${rep.id} downloaded (${rep.fileSize || '3.6 MB'})`, 'success');
+    addToast(`Evidentiary report text package downloaded for ${rep.id}`, 'success');
   };
 
   return (
@@ -20,9 +20,9 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-xl font-black text-gray-100 flex items-center gap-2">
             <FileText className="w-5 h-5 text-brand-primary" />
-            <span>Evidentiary Reports Archive</span>
+            <span>Investigation Reports Archive</span>
           </h1>
-          <p className="text-xs text-gray-400 mt-1">Official intelligence compilations exported for regulatory, SAR, and court proceedings.</p>
+          <p className="text-xs text-gray-400 mt-1">Generated investigation summaries for demonstration and analyst review.</p>
         </div>
 
         <button
@@ -75,7 +75,7 @@ export default function ReportsPage() {
                       className="px-2.5 py-1 rounded bg-brand-primary hover:bg-cyan-600 text-dark-950 font-bold transition flex items-center gap-1"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Export PDF</span>
+                      <span>Download</span>
                     </button>
                   </div>
                 </td>

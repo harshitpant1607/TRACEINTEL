@@ -6,16 +6,22 @@ import { useApp } from '../context/AppContext';
 import { shortenAddress } from '../utils/helpers';
 
 export default function RiskAlertsPage() {
-  const { alerts, markAlertResolved, addToast } = useApp();
+  const { alerts, markAlertResolved } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('ALL');
 
+  // Dynamic count derivations
+  const unresolvedCritical = alerts.filter(a => a.severity === 'CRITICAL' && a.status !== 'Resolved').length;
+  const unresolvedHigh = alerts.filter(a => a.severity === 'HIGH' && a.status !== 'Resolved').length;
+  const unresolvedMedium = alerts.filter(a => a.severity === 'MEDIUM' && a.status !== 'Resolved').length;
+  const resolvedCount = alerts.filter(a => a.status === 'Resolved').length;
+
   const tabs = [
-    { key: 'ALL', label: 'All Alerts' },
-    { key: 'CRITICAL', label: 'Critical' },
-    { key: 'HIGH', label: 'High Severity' },
-    { key: 'MEDIUM', label: 'Medium' },
-    { key: 'Resolved', label: 'Resolved' }
+    { key: 'ALL', label: 'All Alerts', count: alerts.length },
+    { key: 'CRITICAL', label: 'Critical', count: unresolvedCritical },
+    { key: 'HIGH', label: 'High Severity', count: unresolvedHigh },
+    { key: 'MEDIUM', label: 'Medium', count: unresolvedMedium },
+    { key: 'Resolved', label: 'Resolved', count: resolvedCount }
   ];
 
   const filteredAlerts = alerts.filter(a => {
@@ -35,19 +41,24 @@ export default function RiskAlertsPage() {
         <p className="text-xs text-gray-400 mt-1">Automated threat engine rules, trigger alerts, and compliance flags.</p>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Dynamic Tabs with Badges */}
       <div className="flex items-center gap-2 border-b border-dark-700 pb-2 overflow-x-auto">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
               activeTab === tab.key 
                 ? 'bg-brand-primary text-dark-950 shadow-md' 
                 : 'text-gray-400 hover:text-gray-200 hover:bg-dark-800'
             }`}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            <span className={`px-1.5 py-0.5 text-[10px] font-mono rounded ${
+              activeTab === tab.key ? 'bg-dark-950/30 text-dark-950' : 'bg-dark-900 text-gray-400 border border-dark-750'
+            }`}>
+              {tab.count}
+            </span>
           </button>
         ))}
       </div>
@@ -58,9 +69,9 @@ export default function RiskAlertsPage() {
           <div
             key={alert.id}
             className={`p-5 rounded-xl border transition shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-              alert.severity === 'CRITICAL' 
+              alert.severity === 'CRITICAL' && alert.status !== 'Resolved'
                 ? 'bg-red-950/20 border-red-500/40' 
-                : alert.severity === 'HIGH' 
+                : alert.severity === 'HIGH' && alert.status !== 'Resolved'
                 ? 'bg-orange-950/20 border-orange-500/40' 
                 : 'bg-dark-800 border-dark-700'
             }`}
@@ -95,7 +106,7 @@ export default function RiskAlertsPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-              {alert.status !== 'Resolved' && (
+              {alert.status !== 'Resolved' ? (
                 <button
                   onClick={() => markAlertResolved(alert.id)}
                   className="px-3 py-1.5 rounded-lg bg-dark-750 hover:bg-dark-700 text-emerald-400 text-xs font-semibold border border-dark-600 transition flex items-center gap-1"
@@ -103,6 +114,10 @@ export default function RiskAlertsPage() {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Mark Resolved</span>
                 </button>
+              ) : (
+                <span className="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs font-mono font-semibold">
+                  Resolved
+                </span>
               )}
 
               <button

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Search, Layers, Briefcase, ArrowRight, ShieldAlert, Wallet } from 'lucide-react';
+import { X, Search, Layers, Briefcase, ArrowRight, ShieldAlert, Wallet, Eye } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 import { shortenAddress } from '../../utils/helpers';
 
@@ -63,11 +63,19 @@ export default function NodeDetailPanel({ node, onClose, onOpenCreateCase }) {
       {/* Action Buttons */}
       <div className="mt-6 pt-4 border-t border-dark-700 space-y-2">
         <button
-          onClick={() => navigate(`/wallet-intelligence?address=${node.address}`)}
+          onClick={() => navigate(`/investigations/INV-2026-004`)}
           className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-brand-primary hover:bg-cyan-600 text-dark-950 font-bold text-xs shadow-md transition"
         >
-          <Search className="w-3.5 h-3.5" />
-          <span>Open Wallet Intelligence</span>
+          <Eye className="w-3.5 h-3.5" />
+          <span>View Investigation INV-2026-004</span>
+        </button>
+
+        <button
+          onClick={() => navigate(`/wallet-intelligence?address=${node.address}`)}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-dark-750 hover:bg-dark-700 text-gray-200 font-medium text-xs border border-dark-600 transition"
+        >
+          <Search className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Open Wallet Profile</span>
         </button>
 
         <button
@@ -83,7 +91,7 @@ export default function NodeDetailPanel({ node, onClose, onOpenCreateCase }) {
           className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300 font-semibold text-xs border border-red-800/60 transition"
         >
           <Briefcase className="w-3.5 h-3.5 text-red-400" />
-          <span>Add Node to Case</span>
+          <span>Create Case</span>
         </button>
       </div>
     </div>

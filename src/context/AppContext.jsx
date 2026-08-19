@@ -30,13 +30,52 @@ export function AppProvider({ children }) {
   const [reports, setReports] = useState(INITIAL_REPORTS);
   const [graphData, setGraphData] = useState(GRAPH_DATA);
 
+  const [notifications, setNotifications] = useState([
+    {
+      id: 'N1',
+      title: 'CRITICAL: High-Risk Mixing Hub Detected',
+      message: 'Wallet 0x71C8...A92F executed rapid $184,200 USDT transfers through 5 intermediary hops.',
+      time: '10 mins ago',
+      type: 'critical',
+      read: false,
+      targetPath: '/investigations/INV-2026-004'
+    },
+    {
+      id: 'N2',
+      title: 'HIGH: Rapid Fund Movement Flagged',
+      message: 'Wallet 0x4B91...E72D initiated multi-address split transfers.',
+      time: '25 mins ago',
+      type: 'high',
+      read: false,
+      targetPath: '/risk-alerts'
+    },
+    {
+      id: 'N3',
+      title: 'NEW ENTITY: ShadowRoute Mixer Association',
+      message: 'Automated cluster mapping identified connection to ShadowRoute Mixer portal.',
+      time: '1 hour ago',
+      type: 'info',
+      read: false,
+      targetPath: '/entity-intelligence'
+    },
+    {
+      id: 'N4',
+      title: 'CASE UPDATE: CP-2026-004 Established',
+      message: 'Lead Inv. Sarah Vance opened investigation case for USDT layering.',
+      time: '2 hours ago',
+      type: 'success',
+      read: true,
+      targetPath: '/cases'
+    }
+  ]);
+
+  // Derived notification count
+  const unreadNotificationCount = notifications.filter(n => !n.read).length;
+
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
   const [toasts, setToasts] = useState([]);
-  const [activeModal, setActiveModal] = useState(null); // { type, data }
-  const [selectedTx, setSelectedTx] = useState(null);
-  const [selectedGraphNode, setSelectedGraphNode] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(3);
+  const [selectedCaseModal, setSelectedCaseModal] = useState(null);
 
   // Toast Helper
   const addToast = (message, type = 'info') => {
@@ -58,14 +97,24 @@ export function AppProvider({ children }) {
       name: newCase.name,
       priority: newCase.priority || 'High',
       targetWallet: newCase.targetWallet || '0x71C8F91A2B5E43C988D3E105634A9F01289EA92F',
-      riskScore: newCase.riskScore || 90,
+      riskScore: newCase.riskScore || 94,
       assignedAnalyst: currentUser.name,
       status: 'Open',
       createdDate: new Date().toISOString().split('T')[0],
-      description: newCase.description
+      description: newCase.description,
+      investigationId: 'INV-2026-004'
     };
     setCases(prev => [caseObj, ...prev]);
-    addToast(`Case "${caseObj.name}" successfully established`, 'success');
+    addToast(`Case "${caseObj.name}" established successfully`, 'success');
+    return caseObj;
+  };
+
+  const updateCaseStatus = (caseId, newStatus) => {
+    setCases(prev => prev.map(c => c.id === caseId ? { ...c, status: newStatus } : c));
+    if (selectedCaseModal && selectedCaseModal.id === caseId) {
+      setSelectedCaseModal(prev => ({ ...prev, status: newStatus }));
+    }
+    addToast(`Case ${caseId} status changed to ${newStatus}`, 'info');
   };
 
   const addAnalystNote = (investigationId, text) => {
@@ -81,7 +130,7 @@ export function AppProvider({ children }) {
       }
       return inv;
     }));
-    addToast('Analyst notes recorded in investigation audit trail', 'success');
+    addToast('Analyst note appended to audit log', 'success');
   };
 
   const updateInvestigationStatus = (id, newStatus) => {
@@ -107,8 +156,13 @@ export function AppProvider({ children }) {
       fileSize: '3.6 MB'
     };
     setReports(prev => [newReport, ...prev]);
-    addToast('Investigation Report successfully compiled & exported', 'success');
+    addToast('Investigation Report successfully generated', 'success');
     return newReport;
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    addToast('All notifications marked as read', 'info');
   };
 
   return (
@@ -122,20 +176,19 @@ export function AppProvider({ children }) {
       entities,
       reports,
       graphData,
+      notifications,
+      setNotifications,
+      unreadNotificationCount,
+      markAllNotificationsRead,
       searchQuery,
       setSearchQuery,
       toasts,
       addToast,
       removeToast,
-      activeModal,
-      setActiveModal,
-      selectedTx,
-      setSelectedTx,
-      selectedGraphNode,
-      setSelectedGraphNode,
-      unreadNotificationCount,
-      setUnreadNotificationCount,
+      selectedCaseModal,
+      setSelectedCaseModal,
       addCase,
+      updateCaseStatus,
       addAnalystNote,
       updateInvestigationStatus,
       markAlertResolved,

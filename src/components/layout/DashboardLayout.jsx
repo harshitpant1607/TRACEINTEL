@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import ToastContainer from '../common/ToastContainer';
+import FooterDisclaimer from '../common/FooterDisclaimer';
 
 export default function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -21,10 +22,13 @@ export default function DashboardLayout() {
           onToggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)} 
         />
 
-        {/* Page Content Outlet */}
+        {/* Main Content Area */}
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <Outlet />
         </main>
+
+        {/* Synthetic Data Disclaimer Footer */}
+        <FooterDisclaimer />
       </div>
 
       {/* Global Toasts */}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Network, Building2, ShieldAlert, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Network, Building2, ShieldAlert, ArrowRight, CheckCircle2, Info } from 'lucide-react';
 import RiskBadge from '../components/common/RiskBadge';
 import Modal from '../components/common/Modal';
 import { useApp } from '../context/AppContext';
@@ -7,6 +8,7 @@ import { useApp } from '../context/AppContext';
 export default function EntityIntelligencePage() {
   const { entities } = useApp();
   const [selectedEntity, setSelectedEntity] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
@@ -67,7 +69,7 @@ export default function EntityIntelligencePage() {
           isOpen={!!selectedEntity}
           onClose={() => setSelectedEntity(null)}
           title={`Entity Profile: ${selectedEntity.name}`}
-          subtitle={`Type: ${selectedEntity.type} | Jurisdiction: ${selectedEntity.jurisdiction}`}
+          subtitle={`Classification: Synthetic demonstration entity | Jurisdiction: ${selectedEntity.jurisdiction}`}
         >
           <div className="space-y-4 text-xs">
             <div className="flex items-center justify-between p-4 rounded-xl bg-dark-900 border border-dark-700">
@@ -94,6 +96,18 @@ export default function EntityIntelligencePage() {
                 <span className="text-[10px] text-gray-400 block">Connected Wallets</span>
                 <span className="text-gray-200 font-bold">{selectedEntity.connectedWallets} Wallets</span>
               </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-dark-700">
+              <button
+                onClick={() => {
+                  setSelectedEntity(null);
+                  navigate(`/transaction-monitor`);
+                }}
+                className="px-4 py-2 rounded-lg bg-brand-primary text-dark-950 font-bold text-xs"
+              >
+                View Entity Transactions
+              </button>
             </div>
           </div>
         </Modal>

@@ -12,30 +12,65 @@ import {
   Clock, 
   ArrowRight, 
   ExternalLink,
-  Layers,
   ShieldCheck,
-  User,
-  ArrowLeft
+  ArrowLeft,
+  Layers
 } from 'lucide-react';
 import RiskBadge from '../components/common/RiskBadge';
+import RiskBreakdown from '../components/common/RiskBreakdown';
 import CaseStatusBadge from '../components/common/CaseStatusBadge';
 import CreateCaseModal from '../components/modals/CreateCaseModal';
 import AddNoteModal from '../components/modals/AddNoteModal';
 import GenerateReportModal from '../components/modals/GenerateReportModal';
+import TransactionDetailModal from '../components/modals/TransactionDetailModal';
+import EmptyState from '../components/common/EmptyState';
 import { useApp } from '../context/AppContext';
+import { calculateWalletRiskScore } from '../utils/riskEngine';
 import { formatCurrency, shortenAddress } from '../utils/helpers';
 
 export default function InvestigationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { investigations, updateInvestigationStatus, addToast } = useApp();
+  const { investigations, transactions, wallets, updateInvestigationStatus, addToast } = useApp();
 
   const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedTxModal, setSelectedTxModal] = useState(null);
 
-  // Find target investigation or default to INV-2026-004
-  const inv = investigations.find(i => i.id === (id || 'INV-2026-004')) || investigations[0];
+  // Find target investigation
+  const inv = investigations.find(i => i.id === (id || 'INV-2026-004'));
+
+  if (!inv) {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => navigate('/investigations')}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Return to Active Investigations</span>
+        </button>
+
+        <EmptyState
+          title="Investigation Record Not Found"
+          description={`No investigation case file corresponds to ID "${id}". Please select a valid investigation.`}
+          actionButton={
+            <button
+              onClick={() => navigate('/investigations')}
+              className="px-4 py-2 rounded-lg bg-brand-primary text-dark-950 font-bold text-xs"
+            >
+              Browse Investigations Workspace
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
+  // Calculate risk breakdown for target wallet
+  const targetWalletObj = wallets.find(w => w.address.toLowerCase() === inv.targetWallet.toLowerCase()) || wallets[0];
+  const riskAnalysis = calculateWalletRiskScore(targetWalletObj);
 
   const handleMarkReviewed = () => {
     updateInvestigationStatus(inv.id, 'Under Review');
@@ -44,7 +79,25 @@ export default function InvestigationDetailPage() {
 
   const handleEscalate = () => {
     updateInvestigationStatus(inv.id, 'Escalated');
-    addToast(`Investigation ${inv.id} escalated to Federal Law Enforcement Taskforce`, 'warning');
+    addToast(`Investigation ${inv.id} escalated to Senior Investigation Team`, 'warning');
+  };
+
+  const handleTimelineClick = (step) => {
+    if (step.txHash) {
+      const tx = transactions.find(t => t.hash === step.txHash) || {
+        hash: step.txHash,
+        amount: 184200,
+        asset: 'USDT',
+        usdValue: 184200,
+        from: inv.targetWallet,
+        to: '0x4B91E72D88C3A410928371F029C8B201A9E7E72D',
+        riskScore: 94,
+        riskLevel: 'CRITICAL',
+        status: 'Flagged',
+        timestamp: '2026-08-18 ' + step.time
+      };
+      setSelectedTxModal(tx);
+    }
   };
 
   return (
@@ -56,7 +109,7 @@ export default function InvestigationDetailPage() {
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Workspace Cases</span>
+          <span>Back to Investigations Workspace</span>
         </button>
 
         {/* Global Action Toolbar */}
@@ -87,7 +140,7 @@ export default function InvestigationDetailPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800/60 text-xs font-semibold text-red-300 transition"
           >
             <Briefcase className="w-4 h-4 text-red-400" />
-            <span>Establish Case</span>
+            <span>Create Case</span>
           </button>
           <button
             onClick={() => setIsReportModalOpen(true)}
@@ -117,27 +170,35 @@ export default function InvestigationDetailPage() {
           </div>
         </div>
 
-        {/* Target Address Quick Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-dark-900 border border-dark-750 font-mono text-xs">
+        {/* Primary Storyline Action Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-dark-900 border border-dark-750 font-mono text-xs">
           <div>
             <span className="text-gray-400 text-[11px] block">Target Suspect Address</span>
             <span className="text-cyan-400 font-bold text-sm select-all">{inv.targetWallet}</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => navigate(`/wallet-intelligence?address=${inv.targetWallet}`)}
-              className="flex items-center gap-1 text-xs text-brand-primary hover:underline"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-750 hover:bg-dark-700 text-gray-200 border border-dark-600 font-semibold text-xs transition"
             >
-              <span>Wallet Intelligence</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <Search className="w-3.5 h-3.5 text-cyan-400" />
+              <span>View Wallet Intelligence</span>
+            </button>
+            <button
+              onClick={() => navigate(`/transaction-monitor?wallet=${inv.targetWallet}`)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dark-750 hover:bg-dark-700 text-gray-200 border border-dark-600 font-semibold text-xs transition"
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span>View Transactions</span>
             </button>
             <button
               onClick={() => navigate(`/transaction-network`)}
-              className="flex items-center gap-1 text-xs text-amber-400 hover:underline"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary hover:bg-cyan-600 text-dark-950 font-bold text-xs shadow-md transition"
             >
-              <span>Graph Network</span>
-              <Network className="w-3.5 h-3.5" />
+              <Network className="w-4 h-4" />
+              <span>Trace Transaction Flow</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -145,64 +206,45 @@ export default function InvestigationDetailPage() {
 
       {/* Grid Layout of Investigation Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Summary, Indicators, Timeline */}
+        {/* Left Column: Threat Summary, Risk Breakdown, Timeline */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Section 1: Summary */}
+          {/* Section 1: Threat Summary */}
           <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg space-y-2">
             <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-brand-primary" />
               <span>1. Investigation Threat Summary</span>
             </h3>
             <p className="text-xs text-gray-300 leading-relaxed bg-dark-850 p-4 rounded-lg border border-dark-750">
-              {inv.summary || 'Automated intelligence rules flagged wallet 0x71C8...A92F executing rapid high-volume USDT transfers through 7 intermediary hop addresses within 36 minutes, terminating at a known sanctioned mixer portal.'}
+              {inv.summary}
             </p>
           </div>
 
-          {/* Section 2: Risk Indicators */}
-          <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg space-y-3">
-            <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-              <span>2. Risk Indicators & Behavioral Anomalies</span>
-            </h3>
+          {/* Section 2: Explainable Risk Engine Breakdown */}
+          <RiskBreakdown analysis={riskAnalysis} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {(inv.riskIndicators || [
-                'Rapid fund movement (< 5 min latency between hops)',
-                'Multi-hop layering pattern across 7 accounts',
-                'High-risk counterparty exposure (CryptoClean Mixer)',
-                'Newly created destination wallets (< 7 days old)',
-                'Sub-threshold structured amounts ($92,000 splits)',
-                'Cross-asset conversion attempt (ETH/USDT)'
-              ]).map((indicator, idx) => (
-                <div key={idx} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 text-xs text-red-300">
-                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                  <span>{indicator}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Section 6: Interactive Timeline */}
+          {/* Section 3: Interactive Timeline */}
           <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg space-y-4">
             <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-400" />
-              <span>3. Chronological Attack Vector Timeline</span>
+              <span>3. Chronological Attack Vector Timeline (Click Event to Inspect Tx)</span>
             </h3>
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-dark-700">
-              {(inv.timeline || [
-                { time: '09:42', title: 'Initial Deposit Detected', desc: '300,000 USDT withdrawn from Nova Exchange Proxy 0x9E21...E21A.' },
-                { time: '09:47', title: 'Funds Transferred to Intermediary', desc: '250,000 USDT routed through buffer wallet 0x82FA...B10C.' },
-                { time: '09:52', title: 'Funds Split Across 3 Wallets', desc: 'Transfers split into $184.2K, $35.8K, and $30K tranches.' },
-                { time: '10:03', title: 'Assets Converted', desc: 'Partial USDT swapped for WETH via decentralized protocol.' },
-                { time: '10:11', title: 'Funds Moved to High-Risk Destination', desc: '$92,000 USDT deposited into CryptoClean Mixer portal.' },
-                { time: '10:18', title: 'Critical Alert Escalated', desc: 'TRACEINTEL Risk Engine trigger rule #804 fired; case auto-generated.' }
-              ]).map((step, idx) => (
-                <div key={idx} className="relative group">
-                  <span className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-brand-primary ring-4 ring-dark-800" />
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-brand-primary">{step.time}</span>
-                    <h4 className="text-xs font-bold text-gray-200">{step.title}</h4>
+              {(inv.timeline || []).map((step, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => handleTimelineClick(step)}
+                  className="relative group cursor-pointer p-2 rounded hover:bg-dark-750/80 transition"
+                >
+                  <span className="absolute -left-[19px] top-3 w-3 h-3 rounded-full bg-brand-primary ring-4 ring-dark-800 group-hover:bg-cyan-300" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-brand-primary">{step.time}</span>
+                      <h4 className="text-xs font-bold text-gray-200 group-hover:text-cyan-400">{step.title}</h4>
+                    </div>
+                    {step.txHash && (
+                      <span className="text-[10px] font-mono text-gray-400 group-hover:underline">Inspect Tx &rarr;</span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-400 mt-1">{step.desc}</p>
                 </div>
@@ -213,7 +255,7 @@ export default function InvestigationDetailPage() {
 
         {/* Right Column: Analyst Notes & Actions */}
         <div className="space-y-6">
-          {/* Section 7: Analyst Audit Trail Notes */}
+          {/* Audit Trail Notes */}
           <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
@@ -229,10 +271,7 @@ export default function InvestigationDetailPage() {
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {(inv.analystNotes || [
-                { date: '2026-08-18 10:22', author: 'Inv. Sarah Vance', text: 'Initiated freeze request query with VASP compliance liaison for Nova Exchange proxy address.' },
-                { date: '2026-08-18 10:45', author: 'Inv. Mark Sterling', text: 'Graph analysis confirms 0x71C8 is part of Cluster CL-9021 linked to Eastern Europe cybercrime syndicate.' }
-              ]).map((note, idx) => (
+              {(inv.analystNotes || []).map((note, idx) => (
                 <div key={idx} className="p-3 rounded-lg bg-dark-850 border border-dark-750 text-xs space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono text-gray-400">
                     <span className="text-cyan-400 font-semibold">{note.author}</span>
@@ -244,7 +283,7 @@ export default function InvestigationDetailPage() {
             </div>
           </div>
 
-          {/* Section 8: Recommended Actions Checklist */}
+          {/* Recommended Enforcement Protocol Checklist */}
           <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg space-y-3">
             <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -252,11 +291,7 @@ export default function InvestigationDetailPage() {
             </h3>
 
             <div className="space-y-2">
-              {(inv.recommendedActions || [
-                'Issue emergency freeze order request to Nova Exchange VASP compliance portal.',
-                'Submit blockchain cluster tag update to international law enforcement shared database.',
-                'Generate full evidentiary PDF report for FinCEN SAR filing.'
-              ]).map((action, idx) => (
+              {(inv.recommendedActions || []).map((action, idx) => (
                 <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-dark-850 border border-dark-750 text-xs text-gray-300">
                   <input type="checkbox" defaultChecked={idx === 0} className="mt-0.5 rounded border-dark-600 bg-dark-900 text-brand-primary" />
                   <span>{action}</span>
@@ -282,6 +317,11 @@ export default function InvestigationDetailPage() {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         investigation={inv}
+      />
+      <TransactionDetailModal
+        tx={selectedTxModal}
+        isOpen={!!selectedTxModal}
+        onClose={() => setSelectedTxModal(null)}
       />
     </div>
   );

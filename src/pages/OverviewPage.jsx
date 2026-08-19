@@ -8,7 +8,8 @@ import {
   DollarSign, 
   Radio, 
   ArrowRight,
-  Eye
+  Eye,
+  Info
 } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import CriticalAlertBanner from '../components/overview/CriticalAlertBanner';
@@ -27,15 +28,22 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Header */}
-      <div>
-        <h1 className="text-xl font-black text-gray-100 flex items-center gap-2">
-          <span>Investigation Overview</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">Real-time intelligence across monitored digital assets and entities.</p>
+      {/* Dashboard Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-750 pb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-black text-gray-100 flex items-center gap-2">
+              <span>Investigation Overview</span>
+            </h1>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">
+              SYNTHETIC DEMONSTRATION DATA
+            </span>
+          </div>
+          <p className="text-xs text-gray-400">Demonstration intelligence feed across monitored digital assets and entities.</p>
+        </div>
       </div>
 
-      {/* Critical Alert Spotlight Banner */}
+      {/* Spotlight Critical Threat Banner */}
       <CriticalAlertBanner alert={criticalAlert} />
 
       {/* KPI Cards Grid */}

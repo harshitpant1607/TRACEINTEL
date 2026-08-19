@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, ArrowRight, Activity, AlertOctagon } from 'lucide-react';
+import { ShieldAlert, ArrowRight, AlertOctagon } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 
 export default function CriticalAlertBanner({ alert }) {
@@ -41,7 +41,7 @@ export default function CriticalAlertBanner({ alert }) {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => navigate('/investigations/INV-2026-004')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-600/30 transition"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition"
           >
             <span>Open Investigation INV-2026-004</span>
             <ArrowRight className="w-4 h-4" />

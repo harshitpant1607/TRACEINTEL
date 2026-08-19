@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Layers, Search, Eye, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Layers, Search, Eye, Filter, ArrowUpDown, ShieldAlert, Network, ArrowRight } from 'lucide-react';
 import SearchBar from '../components/common/SearchBar';
 import FilterPanel from '../components/common/FilterPanel';
 import RiskBadge from '../components/common/RiskBadge';
@@ -11,10 +12,12 @@ import { shortenAddress, shortenHash, formatCurrency } from '../utils/helpers';
 
 export default function TransactionMonitorPage() {
   const { transactions } = useApp();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedTxModal, setSelectedTxModal] = useState(null);
   const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
   const [caseWallet, setCaseWallet] = useState('');
+  const [sortBy, setSortBy] = useState('timestamp');
 
   const [selectedFilters, setSelectedFilters] = useState({
     risk: 'ALL',
@@ -52,7 +55,7 @@ export default function TransactionMonitorPage() {
     }
   ];
 
-  const filteredTransactions = transactions.filter(t => {
+  let filteredTransactions = transactions.filter(t => {
     const matchesSearch = !search.trim() || 
       t.hash.toLowerCase().includes(search.toLowerCase()) ||
       t.from.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,18 +68,62 @@ export default function TransactionMonitorPage() {
     return matchesSearch && matchesRisk && matchesAsset && matchesStatus;
   });
 
+  // Sorting
+  filteredTransactions.sort((a, b) => {
+    if (sortBy === 'risk') return b.riskScore - a.riskScore;
+    if (sortBy === 'amount') return b.usdValue - a.usdValue;
+    return new Date(b.timestamp) - new Date(a.timestamp);
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-black text-gray-100 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-brand-primary" />
-          <span>Real-time Transaction Monitor</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">Cross-network transaction stream, velocity triggers, and block telemetry.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-black text-gray-100 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-brand-primary" />
+            <span>Real-time Transaction Monitor</span>
+          </h1>
+          <p className="text-xs text-gray-400 mt-1">Cross-network transaction stream, velocity triggers, and block telemetry.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-gray-400 bg-dark-850 px-3 py-1.5 rounded-lg border border-dark-750">
+            Showing <strong className="text-cyan-400">{filteredTransactions.length}</strong> of {transactions.length} synthetic transactions
+          </span>
+
+          <div className="flex items-center gap-1.5 text-xs text-gray-300 bg-dark-850 border border-dark-750 px-3 py-1.5 rounded-lg">
+            <ArrowUpDown className="w-3.5 h-3.5 text-brand-primary" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-dark-900 border border-dark-700 rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none"
+            >
+              <option value="timestamp">Sort by Timestamp</option>
+              <option value="risk">Sort by Risk Score</option>
+              <option value="amount">Sort by USD Amount</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Toolbar */}
+      {/* Investigation Context Spotlight Banner */}
+      <div className="p-3.5 rounded-xl bg-dark-850 border border-dark-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+          <span>Active Investigation Context: <strong className="text-cyan-400">INV-2026-004</strong> | Target: <strong className="text-red-400">0x71C8...A92F</strong> (94/100)</span>
+        </div>
+
+        <button
+          onClick={() => navigate('/transaction-network')}
+          className="flex items-center gap-1 text-xs text-brand-primary font-bold hover:underline"
+        >
+          <span>View in Transaction Network</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Search & Toolbar */}
       <div className="space-y-3">
         <SearchBar
           value={search}
@@ -91,6 +138,7 @@ export default function TransactionMonitorPage() {
           onReset={() => {
             setSelectedFilters({ risk: 'ALL', asset: 'ALL', status: 'ALL' });
             setSearch('');
+            setSortBy('timestamp');
           }}
         />
       </div>
@@ -99,7 +147,7 @@ export default function TransactionMonitorPage() {
       {filteredTransactions.length === 0 ? (
         <EmptyState
           title="No Transaction Logs Found"
-          description="No transactions match your current search or risk filter criteria."
+          description="No transaction records match your current search, risk, or asset filter parameters."
         />
       ) : (
         <div className="p-5 rounded-xl bg-dark-800 border border-dark-700 shadow-lg overflow-x-auto">
@@ -152,7 +200,7 @@ export default function TransactionMonitorPage() {
         </div>
       )}
 
-      {/* Transaction Detail Modal */}
+      {/* Modals */}
       <TransactionDetailModal
         tx={selectedTxModal}
         isOpen={!!selectedTxModal}
@@ -163,7 +211,6 @@ export default function TransactionMonitorPage() {
         }}
       />
 
-      {/* Create Case Modal */}
       <CreateCaseModal
         isOpen={isCaseModalOpen}
         onClose={() => setIsCaseModalOpen(false)}

@@ -4,13 +4,14 @@ import { Briefcase, Plus, Search, Eye, ArrowRight, User } from 'lucide-react';
 import RiskBadge from '../components/common/RiskBadge';
 import CaseStatusBadge from '../components/common/CaseStatusBadge';
 import CreateCaseModal from '../components/modals/CreateCaseModal';
+import CaseDetailModal from '../components/modals/CaseDetailModal';
 import { useApp } from '../context/AppContext';
 import { shortenAddress } from '../utils/helpers';
 
 export default function CasesPage() {
-  const { cases } = useApp();
+  const { cases, selectedCaseModal, setSelectedCaseModal } = useApp();
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -25,11 +26,11 @@ export default function CasesPage() {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand-primary hover:bg-cyan-600 text-dark-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Establish New Case</span>
+          <span>Create Case</span>
         </button>
       </div>
 
@@ -51,7 +52,11 @@ export default function CasesPage() {
           </thead>
           <tbody className="divide-y divide-dark-750 font-sans">
             {cases.map(c => (
-              <tr key={c.id} className="hover:bg-dark-750/60 transition">
+              <tr 
+                key={c.id} 
+                onClick={() => setSelectedCaseModal(c)}
+                className="hover:bg-dark-750/60 transition cursor-pointer"
+              >
                 <td className="p-3 font-mono font-bold text-cyan-400">{c.id}</td>
                 <td className="p-3 font-bold text-gray-100">{c.name}</td>
                 <td className="p-3">
@@ -70,12 +75,12 @@ export default function CasesPage() {
                   <CaseStatusBadge status={c.status} />
                 </td>
                 <td className="p-3 text-gray-400 font-mono text-[11px]">{c.createdDate}</td>
-                <td className="p-3 text-right">
+                <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => navigate(`/investigations/INV-2026-004`)}
+                    onClick={() => setSelectedCaseModal(c)}
                     className="px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-cyan-600 text-dark-950 font-bold transition inline-flex items-center gap-1"
                   >
-                    <span>Open Case</span>
+                    <span>Open Case File</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </td>
@@ -86,8 +91,14 @@ export default function CasesPage() {
       </div>
 
       <CreateCaseModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      <CaseDetailModal
+        caseData={selectedCaseModal}
+        isOpen={!!selectedCaseModal}
+        onClose={() => setSelectedCaseModal(null)}
       />
     </div>
   );
